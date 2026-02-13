@@ -1,0 +1,14 @@
+2026/02/11-21:56:38.754 2618 Reusing MANIFEST C:\Users\IM-SPEC\.gemini\antigravity\scratch\whatsapp-safe-sender\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/02/11-21:56:38.754 2618 Recovering log #51
+2026/02/11-21:56:38.795 2618 Reusing old log C:\Users\IM-SPEC\.gemini\antigravity\scratch\whatsapp-safe-sender\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/000051.log 
+2026/02/11-21:58:31.223 2618 Level-0 table #57: started
+2026/02/11-21:58:31.275 2618 Level-0 table #57: 1306956 bytes OK
+2026/02/11-21:58:31.278 2618 Delete type=0 #51
+2026/02/11-21:58:31.475 5bcc Compacting 1@1 + 2@2 files
+2026/02/11-21:58:31.619 5bcc Generated table #58@1: 62564 keys, 2246908 bytes
+2026/02/11-21:58:31.659 5bcc Generated table #59@1: 16609 keys, 598526 bytes
+2026/02/11-21:58:31.659 5bcc Compacted 1@1 + 2@2 files => 2845434 bytes
+2026/02/11-21:58:31.660 5bcc compacted to: files[ 0 0 2 0 0 0 0 ]
+2026/02/11-21:58:31.661 5bcc Delete type=2 #53
+2026/02/11-21:58:31.661 5bcc Delete type=2 #54
+2026/02/11-21:58:31.661 5bcc Delete type=2 #57

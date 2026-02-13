@@ -1,0 +1,125 @@
+.logs-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    height: 100%;
+    width: 100%;
+}
+
+/* Reusing page-header, page-title, page-subtitle from contacts.css or similar global utility if desired, 
+   but since no global css except utilities.css, I should define them or duplicates. 
+   To be safe and clean, I will assume I can reuse if I import correctly or just redefine to avoid dependency hell.
+   Actually, CSS imports are not scoped by default so they are global. 
+   So if I imported contacts.css in ContactsScreen and logs.css here, they all dump into global scope.
+   This is fine for "Vanilla CSS". 
+*/
+
+.logs-card {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--glass-bg);
+}
+
+.logs-header {
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--border);
+    background-color: rgba(15, 23, 42, 0.2);
+}
+
+.logs-header-row {
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.col-time {
+    width: 7rem;
+    padding-left: var(--space-2);
+}
+
+.col-status {
+    width: 7rem;
+    text-align: center;
+}
+
+.col-message {
+    flex: 1;
+    padding-left: var(--space-4);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.logs-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-2);
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.empty-logs {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    opacity: 0.5;
+}
+
+.log-item {
+    display: flex;
+    align-items: center;
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    border: 1px solid transparent;
+    transition: background-color 0.2s;
+}
+
+.log-item.error {
+    background-color: rgba(239, 68, 68, 0.05);
+    /* red-500/5 */
+    border-color: rgba(239, 68, 68, 0.1);
+}
+
+.log-item.success {
+    background-color: rgba(16, 185, 129, 0.05);
+    /* emerald-500/5 */
+    border-color: rgba(16, 185, 129, 0.1);
+}
+
+.log-item.default {
+    background-color: rgba(30, 41, 59, 0.2);
+    border-color: rgba(30, 41, 59, 0.5);
+}
+
+.status-badge {
+    font-size: 0.625rem;
+    /* 10px */
+    letter-spacing: 0.05em;
+    padding: 0 0.5rem;
+}
+
+.text-rose-300 {
+    color: #fda4af;
+}
+
+.text-slate-300 {
+    color: #cbd5e1;
+}
+
+.icon-status {
+    flex-shrink: 0;
+}

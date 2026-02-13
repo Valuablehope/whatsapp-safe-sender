@@ -1,0 +1,1 @@
+{"root":["../electron/main.ts","../electron/preload.ts","../electron/shims.d.ts","../electron/ipc/handlers.ts","../electron/services/dailystats.ts","../electron/services/database.ts","../electron/services/scheduler.ts","../electron/services/whatsappclient.ts"],"version":"5.9.3"}

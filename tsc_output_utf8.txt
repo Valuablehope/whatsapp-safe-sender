@@ -1,0 +1,1 @@
+﻿electron/services/WhatsAppClient.ts(91,76): error TS2554: Expected 2 arguments, but got 3.
