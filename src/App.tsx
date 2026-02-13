@@ -20,6 +20,7 @@ function App() {
     if (window.electronAPI) {
       // 1. Listeners
       window.electronAPI.onStatusUpdate((s: string) => {
+        console.log('[App] Received status update:', s);
         setStatus(s);
         if (s === 'ready') setQrCode(null);
       });

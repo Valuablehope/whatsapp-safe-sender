@@ -11,6 +11,7 @@ export class WhatsAppClient {
         this.mainWindow = mainWindow;
 
         // Safety: Run non-headless to avoid "Headless Chromium" ban triggers
+        console.log('Initializing WhatsApp Client...');
         // @ts-ignore
         this.client = new Client({
             authStrategy: new LocalAuth(),
@@ -37,6 +38,7 @@ export class WhatsAppClient {
             this.isReady = true;
             console.log('WhatsApp Client is ready!');
             if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+                console.log('Sending "ready" status to frontend');
                 this.mainWindow.webContents.send('status-update', 'ready');
                 this.mainWindow.webContents.send('log-update', {
                     status: 'system',
