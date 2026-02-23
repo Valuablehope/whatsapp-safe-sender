@@ -52,10 +52,7 @@ export function Sidebar({ currentView, onViewChange, status }: SidebarProps) {
                             {status === 'ready' ? 'System Online' : 'Disconnected'}
                         </span>
                     </div>
-                    {/* Debug: Show raw status */}
-                    <div className="text-[10px] text-slate-600 mb-1 font-mono uppercase">
-                        STATUS: {status}
-                    </div>
+
                     <Badge variant={status === 'ready' ? 'default' : 'destructive'} className="justify-center">
                         {status === 'ready' ? 'ACTIVE' : 'OFFLINE'}
                     </Badge>

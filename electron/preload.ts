@@ -25,9 +25,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     startCampaign: (data: any) => ipcRenderer.invoke('start-campaign', data),
     resumeCampaign: (campaignId: number) => ipcRenderer.invoke('resume-campaign', campaignId),
     stopCampaign: () => ipcRenderer.invoke('stop-campaign'),
+    getCampaignRecipients: (campaignId: number) => ipcRenderer.invoke('get-campaign-recipients', campaignId),
+    saveCampaignRecipients: (campaignId: number, contactIds: number[]) => ipcRenderer.invoke('save-campaign-recipients', { campaignId, contactIds }),
     onLogUpdate: (callback: (log: any) => void) => ipcRenderer.on('log-update', (_event, log) => callback(log)),
     onStatusUpdate: (callback: (status: any) => void) => ipcRenderer.on('status-update', (_event, status) => callback(status)),
     getQRCode: () => ipcRenderer.invoke('get-qr-code'),
+    getStatus: () => ipcRenderer.invoke('get-status'),
+    deleteCampaign: (campaignId: number) => ipcRenderer.invoke('delete-campaign', campaignId),
+    archiveCampaign: (campaignId: number) => ipcRenderer.invoke('archive-campaign', campaignId),
 
     // Group API
     getGroups: () => ipcRenderer.invoke('get-groups'),

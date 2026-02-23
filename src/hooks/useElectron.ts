@@ -10,8 +10,15 @@ export const useElectron = () => {
 
     useEffect(() => {
         if (window.electronAPI) {
+            // Fetch real-time connection state immediately on mount (avoids missing the 'ready' event)
+            window.electronAPI.getStatus().then(res => {
+                if (res?.status) setStatus(res.status);
+            }).catch(() => { });
+
+            // Only update connection status for WhatsApp events — ignore scheduler values
+            const WA_STATUSES = new Set(['ready', 'disconnected', 'loading', 'waiting-for-qr', 'authenticated', 'auth_failure']);
             window.electronAPI.onStatusUpdate((s: string) => {
-                setStatus(s);
+                if (WA_STATUSES.has(s)) setStatus(s);
                 if (s === 'ready') setQrCode(null);
             });
 
@@ -47,6 +54,10 @@ export const useElectron = () => {
 
     const stopCampaign = async () => window.electronAPI?.stopCampaign();
     const getQR = async () => window.electronAPI?.getQRCode();
+    const getCampaignRecipients = async (campaignId: number) => window.electronAPI?.getCampaignRecipients(campaignId);
+    const saveCampaignRecipients = async (campaignId: number, contactIds: number[]) => window.electronAPI?.saveCampaignRecipients(campaignId, contactIds);
+    const deleteCampaign = async (campaignId: number) => window.electronAPI?.deleteCampaign(campaignId);
+    const archiveCampaign = async (campaignId: number) => window.electronAPI?.archiveCampaign(campaignId);
 
     const getGroups = async () => window.electronAPI?.getGroups();
     const getGroupMembers = async (groupId: number) => window.electronAPI?.getGroupMembers(groupId);
@@ -67,6 +78,10 @@ export const useElectron = () => {
         getQR,
         getGroups,
         getGroupMembers,
+        getCampaignRecipients,
+        saveCampaignRecipients,
+        deleteCampaign,
+        archiveCampaign,
         uploadMedia: window.electronAPI?.uploadMedia
     };
 };

@@ -100,6 +100,29 @@ function setupHandlers(win) {
         const result = stmt.run(name || 'Untitled Campaign', 'draft');
         return { id: result.lastInsertRowid };
     });
+    handle('get-campaign-recipients', (_event, campaignId) => {
+        return dbService.getDb().prepare(`
+            SELECT c.*, q.status as queue_status FROM contacts c
+            JOIN campaign_queue q ON c.id = q.contact_id
+            WHERE q.campaign_id = ?
+            ORDER BY c.name ASC
+        `).all(campaignId);
+    });
+    handle('save-campaign-recipients', (_event, { campaignId, contactIds }) => {
+        const db = dbService.getDb();
+        // Remove contacts no longer in the list (only pending ones – don't remove already-sent)
+        const placeholders = contactIds.length > 0 ? contactIds.map(() => '?').join(',') : 'NULL';
+        db.prepare(`DELETE FROM campaign_queue WHERE campaign_id = ? AND status = 'pending' AND contact_id NOT IN (${placeholders})`)
+            .run(campaignId, ...contactIds);
+        // Add new contacts (ignore duplicates)
+        const insert = db.prepare('INSERT OR IGNORE INTO campaign_queue (campaign_id, contact_id, status) VALUES (?, ?, ?)');
+        const tx = db.transaction((ids) => {
+            for (const cid of ids)
+                insert.run(campaignId, cid, 'pending');
+        });
+        tx(contactIds);
+        return { success: true };
+    });
     handle('create-template', (_event, data) => {
         // data: { title, type, body, variations[], mediaPath }
         const stmt = dbService.getDb().prepare('INSERT INTO templates (title, type, body, media_path) VALUES (?, ?, ?, ?)');
@@ -151,9 +174,17 @@ function setupHandlers(win) {
         scheduler.stop();
         return { success: true };
     });
+    handle('delete-campaign', (_event, campaignId) => {
+        const db = dbService.getDb();
+        db.prepare('DELETE FROM campaign_queue WHERE campaign_id = ?').run(campaignId);
+        db.prepare('DELETE FROM campaigns WHERE id = ?').run(campaignId);
+        return { success: true };
+    });
+    handle('archive-campaign', (_event, campaignId) => {
+        dbService.getDb().prepare("UPDATE campaigns SET status = 'archived' WHERE id = ?").run(campaignId);
+        return { success: true };
+    });
     handle('get-qr-code', () => {
-        // Trigger a QR refresh if possible, or just wait for event
-        // waClient.client.emit('qr', ...); // Hard to trigger manually without reload
         if (!waClient.isReady) {
             win.webContents.send('status-update', 'waiting-for-qr');
         }
@@ -161,6 +192,9 @@ function setupHandlers(win) {
             win.webContents.send('status-update', 'ready');
         }
         return null;
+    });
+    handle('get-status', () => {
+        return { status: waClient.isReady ? 'ready' : 'disconnected' };
     });
     handle('reset-database', () => {
         dbService.reset();

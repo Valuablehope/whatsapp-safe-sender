@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useElectron } from '../hooks/useElectron';
-import { FileText, Users, Plus, Upload, Trash2, X, Check, Image as ImageIcon, Paperclip, Play, ArrowLeft, Sparkles } from 'lucide-react';
+import { FileText, Users, Plus, Upload, Trash2, X, Check, Image as ImageIcon, Paperclip, Play, ArrowLeft, Sparkles, Archive, MoreVertical } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
@@ -12,15 +12,18 @@ interface Contact {
     name: string;
     phone: string;
     tag: string;
+    queue_status?: 'pending' | 'sent' | 'failed';
 }
 
 export const CampaignScreen = ({ status }: { status: string }) => {
-    const { getCampaigns, createCampaign, resumeCampaign, startCampaign, getContacts, getGroups, getGroupMembers, saveContact } = useElectron();
+    const { getCampaigns, createCampaign, resumeCampaign, startCampaign, getContacts, getGroups, getGroupMembers, saveContact, getCampaignRecipients, saveCampaignRecipients, deleteCampaign, archiveCampaign } = useElectron();
 
     // View State
     const [view, setView] = useState<'list' | 'detail'>('list');
     const [campaigns, setCampaigns] = useState<any[]>([]);
     const [selectedCampaign, setSelectedCampaign] = useState<any | null>(null);
+    const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+    const [showArchived, setShowArchived] = useState(false);
 
     // Create Modal State
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -34,6 +37,9 @@ export const CampaignScreen = ({ status }: { status: string }) => {
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+    // Refs to gate auto-save: block saves until the first DB load has finished
+    const isLoadingRef = useRef(false);
+    const hasLoadedRef = useRef(false);
 
     // Contact Modal State
     const [showContactModal, setShowContactModal] = useState(false);
@@ -43,18 +49,90 @@ export const CampaignScreen = ({ status }: { status: string }) => {
     const [activeTab, setActiveTab] = useState<'contacts' | 'groups'>('contacts');
 
     useEffect(() => {
-        if (view === 'list') {
-            loadCampaigns();
-        }
+        if (view === 'list') loadCampaigns();
     }, [view]);
+
+    // Live-poll recipient statuses when a campaign is active
+    useEffect(() => {
+        if (view !== 'detail' || !selectedCampaign?.id || selectedCampaign.status !== 'active') return;
+        const interval = setInterval(() => {
+            getCampaignRecipients(selectedCampaign.id)
+                .then(saved => { if (saved) setContacts(saved as Contact[]); })
+                .catch(() => { });
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [view, selectedCampaign?.id, selectedCampaign?.status]);
+
+    // Load persisted recipients whenever a campaign is opened in detail view
+    useEffect(() => {
+        if (view === 'detail' && selectedCampaign?.id) {
+            isLoadingRef.current = true;
+            hasLoadedRef.current = false;
+            setContacts([]);
+            getCampaignRecipients(selectedCampaign.id)
+                .then(saved => {
+                    if (saved && saved.length > 0) setContacts(saved as Contact[]);
+                })
+                .catch(e => console.error('Failed to load recipients:', e))
+                .finally(() => {
+                    isLoadingRef.current = false;
+                    hasLoadedRef.current = true;
+                });
+        } else if (view === 'detail') {
+            isLoadingRef.current = false;
+            hasLoadedRef.current = true;
+            setContacts([]);
+        }
+    }, [selectedCampaign?.id, view]);
+
+    // Auto-save recipients to DB whenever the contacts list changes (debounced)
+    // Guard: only runs after the initial load has completed
+    useEffect(() => {
+        if (!selectedCampaign?.id || isLoadingRef.current || !hasLoadedRef.current || view !== 'detail') return;
+        // Never auto-save when campaign is already running/done — would overwrite sent statuses back to pending
+        if (selectedCampaign?.status === 'active' || selectedCampaign?.status === 'completed') return;
+        const timer = setTimeout(async () => {
+            // Double-check guard inside async callback too
+            if (isLoadingRef.current || !hasLoadedRef.current) return;
+            const contactIds: number[] = [];
+            for (const c of contacts) {
+                if (c.id) {
+                    contactIds.push(c.id);
+                } else {
+                    try {
+                        const res = await saveContact(c);
+                        if (res?.lastInsertRowid) {
+                            c.id = res.lastInsertRowid as number;
+                            contactIds.push(c.id);
+                        }
+                    } catch { /* ignore */ }
+                }
+            }
+            saveCampaignRecipients(selectedCampaign.id, contactIds)
+                .catch(e => console.error('Auto-save failed:', e));
+        }, 600);
+        return () => clearTimeout(timer);
+    }, [contacts, selectedCampaign?.id, view]);
 
     const loadCampaigns = async () => {
         try {
             const data = await getCampaigns();
+            // Keep all campaigns in state; filter in render
             setCampaigns(data || []);
         } catch (e) {
             console.error('Failed to load campaigns:', e);
         }
+    };
+
+    const handleDeleteCampaign = async (campaignId: number) => {
+        if (!confirm('Permanently delete this campaign and all its data? This cannot be undone.')) return;
+        await deleteCampaign(campaignId);
+        loadCampaigns();
+    };
+
+    const handleArchiveCampaign = async (campaignId: number) => {
+        await archiveCampaign(campaignId);
+        loadCampaigns();
     };
 
     const handleCreateCampaign = async () => {
@@ -220,8 +298,9 @@ export const CampaignScreen = ({ status }: { status: string }) => {
                 contactIds
             });
 
-            alert(`Campaign Started!`);
-            setView('list');
+            // Update local campaign status and stay in detail view
+            setSelectedCampaign((prev: any) => ({ ...prev, status: 'active' }));
+            alert('Campaign started! You can track progress below.');
         } catch (e: any) {
             console.error(e);
             alert('Error starting campaign: ' + e.message);
@@ -253,13 +332,14 @@ export const CampaignScreen = ({ status }: { status: string }) => {
                         <Button onClick={() => setShowCreateModal(true)} className="gap-2 shrink-0">
                             <Plus size={16} /> New Campaign
                         </Button>
+
                     </header>
 
                     <div className="overflow-y-auto flex-1 pr-2">
                         <div className="grid gap-4">
-                            {campaigns.length === 0 ? (
-                                <div className="text-center py-12 text-slate-400">No campaigns yet. Click New Campaign to start!</div>
-                            ) : campaigns.map(camp => (
+                            {campaigns.filter((c: any) => showArchived ? c.status === 'archived' : c.status !== 'archived').length === 0 ? (
+                                <div className="text-center py-12 text-slate-400">{showArchived ? 'No archived campaigns.' : 'No campaigns yet. Click New Campaign to start!'}</div>
+                            ) : campaigns.filter((c: any) => showArchived ? c.status === 'archived' : c.status !== 'archived').map(camp => (
                                 <Card key={camp.id} className="bg-surface p-4 flex flex-row items-center">
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -275,19 +355,65 @@ export const CampaignScreen = ({ status }: { status: string }) => {
                                         </div>
                                         <p className="text-sm text-slate-400">Created: {new Date(camp.created_at).toLocaleDateString()}</p>
                                     </div>
-                                    <div className="flex gap-2 shrink-0">
+                                    <div className="flex gap-2 shrink-0 items-center">
                                         {camp.status === 'draft' && (
                                             <Button size="sm" onClick={() => { setSelectedCampaign(camp); setView('detail'); }}>Configure</Button>
                                         )}
-                                        {camp.status === 'paused' && (
-                                            <Button size="sm" variant="secondary" onClick={() => handleResume(camp.id)}>
-                                                <Play size={16} className="mr-1" /> Resume
-                                            </Button>
+                                        {(camp.status === 'active' || camp.status === 'completed') && (
+                                            <Button size="sm" variant="secondary" onClick={() => { setSelectedCampaign(camp); setView('detail'); }}>View</Button>
                                         )}
+                                        {camp.status === 'paused' && (
+                                            <>
+                                                <Button size="sm" variant="secondary" onClick={() => { setSelectedCampaign(camp); setView('detail'); }}>View</Button>
+                                                <Button size="sm" onClick={() => handleResume(camp.id)}>
+                                                    <Play size={16} className="mr-1" /> Resume
+                                                </Button>
+                                            </>
+                                        )}
+                                        {/* 3-dot menu */}
+                                        <div className="relative">
+                                            <Button
+                                                size="sm" variant="ghost"
+                                                className="text-slate-400 hover:text-slate-200 px-1"
+                                                onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === camp.id ? null : camp.id); }}
+                                            >
+                                                <MoreVertical size={16} />
+                                            </Button>
+                                            {openMenuId === camp.id && (
+                                                <div
+                                                    className="absolute right-0 top-8 z-50 bg-slate-800 border border-slate-700 rounded-lg shadow-xl min-w-[140px] py-1 text-sm"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    <button
+                                                        className="flex items-center gap-2 w-full px-4 py-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+                                                        onClick={() => { handleArchiveCampaign(camp.id); setOpenMenuId(null); }}
+                                                    >
+                                                        <Archive size={14} /> Archive
+                                                    </button>
+                                                    <button
+                                                        className="flex items-center gap-2 w-full px-4 py-2 text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+                                                        onClick={() => { handleDeleteCampaign(camp.id); setOpenMenuId(null); }}
+                                                    >
+                                                        <Trash2 size={14} /> Delete
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </Card>
                             ))}
                         </div>
+                    </div>
+                    <div className="pt-4 flex justify-center">
+                        <button
+                            onClick={() => setShowArchived(v => !v)}
+                            className={`flex items-center gap-2 text-xs px-4 py-2 rounded-full border transition-colors ${showArchived
+                                    ? 'border-emerald-500/40 text-emerald-400 bg-emerald-500/10'
+                                    : 'border-slate-700 text-slate-500 hover:text-slate-300 hover:border-slate-500'
+                                }`}
+                        >
+                            <Archive size={13} />{showArchived ? 'Hide Archived' : 'View Archived Campaigns'}
+                        </button>
                     </div>
                 </div>
             )}
@@ -406,22 +532,34 @@ export const CampaignScreen = ({ status }: { status: string }) => {
                                         </div>
                                     ) : (
                                         <div className="space-y-1">
-                                            {contacts.slice(0, 50).map((c, i) => (
-                                                <div key={i} className="contact-item p-2 mb-1 bg-slate-800/50 rounded flex justify-between items-center">
-                                                    <div>
-                                                        <p className="font-medium text-slate-100 text-sm">{c.name}</p>
-                                                        <p className="text-xs text-slate-400 font-mono">{c.phone}</p>
+                                            {contacts.slice(0, 100).map((c, i) => {
+                                                const statusMap: Record<string, { label: string; cls: string }> = {
+                                                    sent: { label: 'Sent', cls: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
+                                                    failed: { label: 'Failed', cls: 'bg-red-500/20 text-red-400 border-red-500/30' },
+                                                    pending: { label: 'Pending', cls: 'bg-slate-500/20 text-slate-400 border-slate-500/30' },
+                                                };
+                                                const st = statusMap[c.queue_status ?? 'pending'];
+                                                return (
+                                                    <div key={c.id ?? i} className="contact-item p-2 mb-1 bg-slate-800/50 rounded flex justify-between items-center">
+                                                        <div>
+                                                            <p className="font-medium text-slate-100 text-sm">{c.name}</p>
+                                                            <p className="text-xs text-slate-400 font-mono">{c.phone}</p>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            {c.tag && <Badge variant="secondary">{c.tag}</Badge>}
+                                                            <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${st.cls}`}>{st.label}</span>
+                                                        </div>
                                                     </div>
-                                                    {c.tag && <Badge variant="secondary">{c.tag}</Badge>}
-                                                </div>
-                                            ))}
-                                            {contacts.length > 50 && <p className="text-center text-xs text-slate-400 mt-3 py-2">And {contacts.length - 50} more...</p>}
+                                                );
+                                            })}
+                                            {contacts.length > 100 && <p className="text-center text-xs text-slate-400 mt-3 py-2">And {contacts.length - 100} more...</p>}
                                         </div>
                                     )}
                                 </div>
                                 {contacts.length > 0 && (
-                                    <div className="footer-stats shrink-0 mt-4 border-t border-slate-700 pt-4 flex justify-between">
+                                    <div className="footer-stats shrink-0 mt-4 border-t border-slate-700 pt-4 flex justify-between text-sm">
                                         <span>Total: <strong className="text-slate-100">{contacts.length}</strong></span>
+                                        <span className="text-emerald-400 font-medium">{contacts.filter(c => c.queue_status === 'sent').length} Sent</span>
                                         <span>Est. Time: <strong className="text-emerald">{estimatedTime()}</strong></span>
                                     </div>
                                 )}

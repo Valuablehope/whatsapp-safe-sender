@@ -14,6 +14,11 @@ interface Window {
         createTemplate: (data: { title: string; type?: string; body: string; variations?: string[]; mediaPath?: string | null }) => Promise<any>;
         startCampaign: (campaignData: any) => Promise<any>;
         stopCampaign: () => Promise<any>;
+        getCampaignRecipients: (campaignId: number) => Promise<any[]>;
+        saveCampaignRecipients: (campaignId: number, contactIds: number[]) => Promise<any>;
+        getStatus: () => Promise<{ status: string }>;
+        deleteCampaign: (campaignId: number) => Promise<any>;
+        archiveCampaign: (campaignId: number) => Promise<any>;
 
         onLogUpdate: (callback: (log: any) => void) => void;
         onStatusUpdate: (callback: (status: string) => void) => void;
