@@ -408,8 +408,8 @@ export const CampaignScreen = ({ status }: { status: string }) => {
                         <button
                             onClick={() => setShowArchived(v => !v)}
                             className={`flex items-center gap-2 text-xs px-4 py-2 rounded-full border transition-colors ${showArchived
-                                    ? 'border-emerald-500/40 text-emerald-400 bg-emerald-500/10'
-                                    : 'border-slate-700 text-slate-500 hover:text-slate-300 hover:border-slate-500'
+                                ? 'border-emerald-500/40 text-emerald-400 bg-emerald-500/10'
+                                : 'border-slate-700 text-slate-500 hover:text-slate-300 hover:border-slate-500'
                                 }`}
                         >
                             <Archive size={13} />{showArchived ? 'Hide Archived' : 'View Archived Campaigns'}
@@ -576,19 +576,35 @@ export const CampaignScreen = ({ status }: { status: string }) => {
             {/* Create Campaign Modal */}
             {showCreateModal && (
                 <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
-                    <Card className="w-96 p-6" onClick={e => e.stopPropagation()}>
-                        <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><Plus className="text-emerald" /> New Campaign</h2>
-                        <Input
-                            autoFocus
-                            placeholder="Campaign Name (e.g., Summer Promo)"
-                            value={newCampaignName}
-                            onChange={e => setNewCampaignName(e.target.value)}
-                            className="mb-6"
-                            onKeyDown={e => e.key === 'Enter' && handleCreateCampaign()}
-                        />
-                        <div className="flex gap-3 justify-end">
-                            <Button variant="ghost" onClick={() => setShowCreateModal(false)}>Cancel</Button>
-                            <Button onClick={handleCreateCampaign} disabled={!newCampaignName.trim()}>Create & Configure</Button>
+                    <Card style={{ width: 440 }} onClick={e => e.stopPropagation()}>
+                        {/* Modal Header */}
+                        <div style={{ padding: '32px 32px 24px', borderBottom: '1px solid var(--border)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                                <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(16,185,129,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                    <Plus size={20} className="text-emerald-400" style={{ color: '#34d399' }} />
+                                </div>
+                                <div>
+                                    <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>New Campaign</h2>
+                                    <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '2px 0 0' }}>Give your campaign a memorable name</p>
+                                </div>
+                            </div>
+                        </div>
+                        {/* Modal Body */}
+                        <div style={{ padding: '28px 32px 20px' }}>
+                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', marginBottom: 10 }}>Campaign Name</label>
+                            <Input
+                                autoFocus
+                                placeholder="e.g. Summer Promo 2025"
+                                value={newCampaignName}
+                                onChange={e => setNewCampaignName(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && handleCreateCampaign()}
+                            />
+                            <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: 10 }}>You'll configure the message and recipients in the next step.</p>
+                        </div>
+                        {/* Modal Footer */}
+                        <div style={{ padding: '0 32px 32px', display: 'flex', gap: 12 }}>
+                            <Button variant="ghost" style={{ flex: 1 }} onClick={() => setShowCreateModal(false)}>Cancel</Button>
+                            <Button style={{ flex: 1 }} onClick={handleCreateCampaign} disabled={!newCampaignName.trim()}>Create &amp; Configure →</Button>
                         </div>
                     </Card>
                 </div>

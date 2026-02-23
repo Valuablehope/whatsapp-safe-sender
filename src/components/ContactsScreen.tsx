@@ -585,7 +585,7 @@ export function ContactsScreen() {
                                     <X size={20} />
                                 </Button>
                             </div>
-                            <CardContent className="pt-6">
+                            <CardContent style={{ padding: '28px 32px 32px' }}>
                                 <form onSubmit={handleSubmit} className="space-y-4">
                                     <div className="form-group">
                                         <Input

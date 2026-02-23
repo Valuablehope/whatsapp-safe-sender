@@ -126,18 +126,22 @@
 }
 
 /* Modal specific overrides or reusing campaign modal if possible, but keep specific here for safety */
+.modal-card {
+    padding: 0 !important;
+    /* reset any inherited padding; children handle their own */
+}
+
 .modal-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px solid var(--border);
-    padding-bottom: var(--space-4);
-    margin-bottom: var(--space-4);
+    padding: 28px 32px 24px;
 }
 
 .modal-title {
-    font-size: 1.25rem;
-    font-weight: 600;
+    font-size: 1.15rem;
+    font-weight: 700;
     display: flex;
     align-items: center;
     gap: var(--space-2);
@@ -151,15 +155,16 @@
 }
 
 .form-group {
-    margin-bottom: var(--space-2);
+    margin-bottom: var(--space-4);
 }
 
 .modal-actions {
     display: flex;
     justify-content: flex-end;
     gap: var(--space-3);
-    margin-top: var(--space-6);
-    padding-top: var(--space-2);
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border);
 }
 
 .min-w-100 {

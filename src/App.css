@@ -24,6 +24,6 @@
   flex-direction: column;
   overflow: hidden;
   /* Important: Let the child (ContactsScreen) handle scrolling */
-  padding: var(--space-6);
+  padding: 32px 36px;
   height: 100%;
 }
