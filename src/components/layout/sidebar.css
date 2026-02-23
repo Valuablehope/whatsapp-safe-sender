@@ -1,9 +1,7 @@
 .sidebar {
     width: 280px;
     height: 100vh;
-    background-color: rgba(15, 23, 42, 0.6);
-    /* Slate 900 with opacity */
-    backdrop-filter: blur(12px);
+    background-color: #ffffff;
     border-right: 1px solid var(--glass-border);
     display: flex;
     flex-direction: column;
@@ -63,16 +61,15 @@
 }
 
 .nav-item.active {
-    background-color: rgba(16, 185, 129, 0.1);
-    /* Emerald 500/10 */
-    color: var(--primary);
-    border-color: rgba(16, 185, 129, 0.2);
+    background-color: rgba(18, 140, 126, 0.8);
+    color: #ffffff;
+    border-color: transparent;
 }
 
 .sidebar-footer {
     padding: var(--space-4);
-    border-top: 1px solid var(--glass-border);
-    background-color: rgba(15, 23, 42, 0.4);
+    border-top: 1px solid var(--border);
+    background-color: #f8fafc;
 }
 
 .status-indicator {

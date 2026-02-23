@@ -8,11 +8,9 @@
   --primary-hover: #059669;
   /* Emerald 600 */
 
-  --secondary: #334155;
-  /* Slate 700 */
-  --secondary-foreground: #f8fafc;
-  --secondary-hover: #1e293b;
-  /* Slate 800 */
+  --secondary: #166534;
+  --secondary-foreground: #f0fdf4;
+  --secondary-hover: #15803d;
 
   --destructive: #ef4444;
   /* Red 500 */
@@ -30,28 +28,19 @@
   --accent-foreground: #ffffff;
 
   /* Backgrounds */
-  --background: #0f172a;
-  /* Slate 900 */
-  --surface: #1e293b;
-  /* Slate 800 */
-  --surface-hover: #334155;
-  /* Slate 700 */
-  --surface-active: #475569;
-  /* Slate 600 */
+  --background: #fcf5eb;
+  --surface: #ffffff;
+  --surface-hover: #f1f5f9;
+  --surface-active: #e2e8f0;
 
   /* Text */
-  --text-primary: #f8fafc;
-  /* Slate 50 */
-  --text-secondary: #cbd5e1;
-  /* Slate 300 */
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
   --text-muted: #64748b;
-  /* Slate 500 */
 
   /* Borders */
-  --border: #334155;
-  /* Slate 700 */
+  --border: #e2e8f0;
   --border-focus: #10b981;
-  /* Emerald 500 */
   --ring: rgba(16, 185, 129, 0.4);
 
   /* Radius */
@@ -81,8 +70,8 @@
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 
   /* Glassmorphism */
-  --glass-bg: rgba(30, 41, 59, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(0, 0, 0, 0.1);
   --glass-blur: 12px;
 
   /* Animation */
@@ -99,7 +88,9 @@ body {
   /* Prevent body scroll, handle in components */
 }
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 

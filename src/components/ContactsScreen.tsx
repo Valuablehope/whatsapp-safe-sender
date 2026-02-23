@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Users, UserPlus, Search, Edit, X, FolderPlus, Trash2, Upload, Plus } from 'lucide-react';
+import { Users, User, UserPlus, Search, Edit, X, FolderPlus, Trash2, Upload, Plus } from 'lucide-react';
 import { Card, CardContent } from './ui/Card';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
@@ -355,7 +355,6 @@ export function ContactsScreen() {
             <header className="page-header">
                 <div>
                     <h1 className="page-title">
-                        <Users className="text-emerald" size={32} />
                         Contacts Manager
                     </h1>
                     <p className="page-subtitle">Manage your audience database.</p>
@@ -389,26 +388,27 @@ export function ContactsScreen() {
                 </div>
             </header>
 
-            <Card className="contacts-card flex-col overflow-hidden">
-                <div className="pill-navbar-container">
-                    <div className="pill-navbar">
-                        <div className={`pill-indicator ${activeTab === 'groups' ? 'right' : ''}`} />
-                        <button
-                            className={`pill-button ${activeTab === 'all' ? 'active' : ''}`}
-                            onClick={() => { setActiveTab('all'); setSelectedGroupId(null); }}
-                        >
-                            <Users size={18} />
-                            All Contacts
-                        </button>
-                        <button
-                            className={`pill-button ${activeTab === 'groups' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('groups')}
-                        >
-                            <FolderPlus size={18} />
-                            Groups
-                        </button>
-                    </div>
+            <div className="pill-navbar-container mb-4">
+                <div className="pill-navbar">
+                    <div className={`pill-indicator ${activeTab === 'groups' ? 'right' : ''}`} />
+                    <button
+                        className={`pill-button ${activeTab === 'all' ? 'active' : ''}`}
+                        onClick={() => { setActiveTab('all'); setSelectedGroupId(null); }}
+                    >
+                        <User size={18} />
+                        All Contacts
+                    </button>
+                    <button
+                        className={`pill-button ${activeTab === 'groups' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('groups')}
+                    >
+                        <Users size={18} />
+                        Groups
+                    </button>
                 </div>
+            </div>
+
+            <Card className="contacts-card flex-col overflow-hidden">
 
                 <div className="flex-1 flex min-w-0 min-h-0">
                     <GroupSidebar

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useElectron } from '../hooks/useElectron';
-import { Send, FileText, Users, Plus, Upload, Trash2, X, Check, Image as ImageIcon, Paperclip, Play, ArrowLeft } from 'lucide-react';
+import { FileText, Users, Plus, Upload, Trash2, X, Check, Image as ImageIcon, Paperclip, Play, ArrowLeft, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
@@ -246,7 +246,6 @@ export const CampaignScreen = ({ status }: { status: string }) => {
                     <header className="pb-6 border-b flex justify-between items-center mb-6" style={{ borderColor: 'var(--border)' }}>
                         <div>
                             <h1 className="text-3xl font-bold flex items-center gap-3 mb-2 text-slate-100">
-                                <Send className="text-emerald" size={32} />
                                 Campaigns
                             </h1>
                             <p className="text-slate-400">Manage and track your message campaigns.</p>
@@ -263,25 +262,20 @@ export const CampaignScreen = ({ status }: { status: string }) => {
                             ) : campaigns.map(camp => (
                                 <Card key={camp.id} className="bg-surface p-4 flex flex-row items-center">
                                     <div className="flex-1">
-                                        <h3 className="font-bold text-lg text-slate-100">{camp.name}</h3>
+                                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                                            <h3 className="font-bold text-lg text-slate-100">{camp.name}</h3>
+                                            <Badge variant={camp.status === 'active' ? 'default' : camp.status === 'completed' ? 'secondary' : 'outline'}>
+                                                {camp.status.toUpperCase()}
+                                            </Badge>
+                                            {camp.total_queue === 0 ? (
+                                                <Badge variant="outline" className="text-slate-400 border-slate-400">Not Configured</Badge>
+                                            ) : (
+                                                <Badge variant="secondary">{camp.sent_count || 0} / {camp.total_queue} Sent{camp.failed_count > 0 ? ` · ${camp.failed_count} Failed` : ''}</Badge>
+                                            )}
+                                        </div>
                                         <p className="text-sm text-slate-400">Created: {new Date(camp.created_at).toLocaleDateString()}</p>
                                     </div>
-                                    <div className="w-32 text-center">
-                                        <Badge variant={camp.status === 'active' ? 'default' : camp.status === 'completed' ? 'secondary' : 'outline'}>
-                                            {camp.status.toUpperCase()}
-                                        </Badge>
-                                    </div>
-                                    <div className="w-48 text-center text-sm">
-                                        {camp.total_queue > 0 ? (
-                                            <>
-                                                {camp.sent_count || 0} / {camp.total_queue} Sent
-                                                {camp.failed_count > 0 && <span className="text-red-400 block text-xs">({camp.failed_count} Failed)</span>}
-                                            </>
-                                        ) : (
-                                            <span className="text-slate-500">Not configured</span>
-                                        )}
-                                    </div>
-                                    <div className="flex gap-2 w-32 justify-end">
+                                    <div className="flex gap-2 shrink-0">
                                         {camp.status === 'draft' && (
                                             <Button size="sm" onClick={() => { setSelectedCampaign(camp); setView('detail'); }}>Configure</Button>
                                         )}
@@ -304,7 +298,6 @@ export const CampaignScreen = ({ status }: { status: string }) => {
                         <Button variant="ghost" size="icon" onClick={() => setView('list')}><ArrowLeft size={20} /></Button>
                         <div>
                             <h1 className="text-2xl font-bold text-slate-100 flex items-center gap-2">
-                                <Send className="text-emerald" size={24} />
                                 Configure: {selectedCampaign?.name}
                             </h1>
                             <p className="text-sm text-slate-400">Set up your message and recipients</p>
@@ -340,7 +333,7 @@ export const CampaignScreen = ({ status }: { status: string }) => {
                                                     try {
                                                         const path = window.electronAPI.getFilePath(file);
                                                         setUploadProgress(0);
-                                                        const unsubscribe = window.electronAPI.onMediaUploadProgress((percent) => setUploadProgress(percent));
+                                                        window.electronAPI.onMediaUploadProgress((percent) => setUploadProgress(percent));
                                                         const newPath = await window.electronAPI.uploadMedia(path);
                                                         setMediaPath(newPath);
                                                         setUploadProgress(null);
@@ -437,7 +430,7 @@ export const CampaignScreen = ({ status }: { status: string }) => {
                     </div>
 
                     <Button variant="primary" size="lg" className="w-full py-6 text-lg shrink-0" onClick={handleStart} disabled={isProcessing || contacts.length === 0}>
-                        {isProcessing ? <><span className="animate-spin mr-2">⏳</span> Starting Campaign...</> : <><Send size={20} className="mr-2" /> START CAMPAIGN</>}
+                        {isProcessing ? <><span className="animate-spin mr-2">⏳</span> Starting Campaign...</> : <>START CAMPAIGN <Sparkles size={20} className="ml-2" /></>}
                     </Button>
                 </div>
             )}

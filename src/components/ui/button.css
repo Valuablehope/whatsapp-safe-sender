@@ -2,7 +2,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-full);
     font-weight: 500;
     font-size: 0.875rem;
     line-height: 1.25rem;

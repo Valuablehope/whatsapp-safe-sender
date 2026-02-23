@@ -176,13 +176,12 @@
 
 .pill-navbar {
     display: inline-flex;
-    background: rgba(15, 23, 42, 0.4);
+    background: #ffffff;
     padding: 6px;
     border-radius: 9999px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
     position: relative;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     gap: 4px;
 }
 
