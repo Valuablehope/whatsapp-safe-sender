@@ -19,8 +19,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Specific API methods (safer than generic send/receive)
     getContacts: () => ipcRenderer.invoke('get-contacts'),
     saveContact: (contact: any) => ipcRenderer.invoke('save-contact', contact),
+    getCampaigns: () => ipcRenderer.invoke('get-campaigns'),
+    createCampaign: (name: string) => ipcRenderer.invoke('create-campaign', name),
     createTemplate: (data: any) => ipcRenderer.invoke('create-template', data),
-    startCampaign: (campaignId: number) => ipcRenderer.invoke('start-campaign', campaignId),
+    startCampaign: (data: any) => ipcRenderer.invoke('start-campaign', data),
+    resumeCampaign: (campaignId: number) => ipcRenderer.invoke('resume-campaign', campaignId),
     stopCampaign: () => ipcRenderer.invoke('stop-campaign'),
     onLogUpdate: (callback: (log: any) => void) => ipcRenderer.on('log-update', (_event, log) => callback(log)),
     onStatusUpdate: (callback: (status: any) => void) => ipcRenderer.on('status-update', (_event, status) => callback(status)),

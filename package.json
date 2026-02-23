@@ -1,5 +1,5 @@
 {
-  "name": "whatsapp-safe-sender",
+  "name": "echo",
   "private": true,
   "version": "0.0.0",
   "main": "dist-electron/electron/main.js",
@@ -12,8 +12,8 @@
     "preview": "vite preview"
   },
   "build": {
-    "appId": "com.antigravity.whatsapp-safe-sender",
-    "productName": "AntiBan Pro",
+    "appId": "com.antigravity.echo",
+    "productName": "ECHO",
     "directories": {
       "output": "dist"
     },

@@ -50,9 +50,22 @@ class DBService {
 
       CREATE TABLE IF NOT EXISTS campaigns (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
         template_id INTEGER,
+        status TEXT DEFAULT 'draft',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(template_id) REFERENCES templates(id)
+      );
+
+      CREATE TABLE IF NOT EXISTS campaign_queue (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        campaign_id INTEGER,
+        contact_id INTEGER,
+        status TEXT DEFAULT 'pending',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE,
+        FOREIGN KEY(contact_id) REFERENCES contacts(id) ON DELETE CASCADE,
+        UNIQUE(campaign_id, contact_id)
       );
 
       CREATE TABLE IF NOT EXISTS logs (
@@ -93,6 +106,13 @@ class DBService {
                 console.log('[Database] Migrating: Adding media_path to templates');
                 this.db.prepare('ALTER TABLE templates ADD COLUMN media_path TEXT').run();
             }
+            const campTableInfo = this.db.pragma('table_info(campaigns)');
+            const hasName = campTableInfo.some(col => col.name === 'name');
+            if (!hasName) {
+                console.log('[Database] Migrating: Adding name and status to campaigns');
+                this.db.prepare("ALTER TABLE campaigns ADD COLUMN name TEXT DEFAULT 'Legacy Campaign' NOT NULL").run();
+                this.db.prepare("ALTER TABLE campaigns ADD COLUMN status TEXT DEFAULT 'completed'").run();
+            }
         }
         catch (error) {
             console.error('[Database] Migration error:', error);
@@ -105,6 +125,7 @@ class DBService {
         // Delete in order of dependencies (child tables first)
         const tables = [
             'logs',
+            'campaign_queue',
             'group_members',
             'campaigns',
             'template_variations',

@@ -3,20 +3,12 @@ import { WhatsAppClient } from './WhatsAppClient';
 import { DailyStats } from './DailyStats';
 import { BrowserWindow } from 'electron';
 
-interface QueueItem {
-    contactId: number;
-    templateId: number;
-    campaignId: number;
-}
-
 export class Scheduler {
-    private queue: QueueItem[] = [];
     private isRunning: boolean = false;
     private dbService: DBService;
     private waClient: WhatsAppClient;
     private dailyStats: DailyStats;
     private mainWindow: BrowserWindow;
-
     private messagesSentSession = 0;
 
     constructor(db: DBService, client: WhatsAppClient, stats: DailyStats, win: BrowserWindow) {
@@ -24,15 +16,6 @@ export class Scheduler {
         this.waClient = client;
         this.dailyStats = stats;
         this.mainWindow = win;
-    }
-
-    public addToQueue(items: QueueItem[]) {
-        this.queue.push(...items);
-        this.updateStatus();
-        if (!this.isRunning) {
-            // Auto-start or wait for manual start? Prompt says "Start / Pause / Stop buttons"
-            // So we wait for explicit start call.
-        }
     }
 
     public start() {
@@ -47,16 +30,23 @@ export class Scheduler {
         this.updateStatus('stopped');
     }
 
-    public clearQueue() {
-        this.queue = [];
-        this.updateStatus();
-    }
-
     private async processQueue() {
         if (!this.isRunning) return;
 
-        if (this.queue.length === 0) {
+        // Fetch a single pending queue item
+        const item = this.dbService.getDb().prepare(`
+            SELECT q.id as queue_id, q.campaign_id, q.contact_id, c.template_id 
+            FROM campaign_queue q
+            JOIN campaigns c ON q.campaign_id = c.id
+            WHERE q.status = 'pending' AND c.status = 'active'
+            ORDER BY q.created_at ASC
+            LIMIT 1
+        `).get() as any;
+
+        if (!item) {
             this.stop();
+            // Check if ANY active campaigns exist, if so mark them completed
+            this.dbService.getDb().prepare("UPDATE campaigns SET status = 'completed' WHERE status = 'active' AND id NOT IN (SELECT campaign_id FROM campaign_queue WHERE status = 'pending')").run();
             this.updateStatus('completed');
             return;
         }
@@ -66,6 +56,7 @@ export class Scheduler {
             this.stop();
             this.logSystem('Daily limit of 80 messages reached. Stopping safely.');
             this.updateStatus('limit-reached');
+            this.dbService.getDb().prepare("UPDATE campaigns SET status = 'paused' WHERE status = 'active'").run();
             return;
         }
 
@@ -80,23 +71,22 @@ export class Scheduler {
             this.updateStatus('running');
         }
 
-        // 3. Get User
-        const item = this.queue.shift();
-        if (!item) return;
-
         // 4. Get Data
-        const contact = this.dbService.getDb().prepare('SELECT * FROM contacts WHERE id = ?').get(item.contactId) as any;
-        const template = this.dbService.getDb().prepare('SELECT * FROM templates WHERE id = ?').get(item.templateId) as any;
+        const contact = this.dbService.getDb().prepare('SELECT * FROM contacts WHERE id = ?').get(item.contact_id) as any;
+        const template = this.dbService.getDb().prepare('SELECT * FROM templates WHERE id = ?').get(item.template_id) as any;
+
+        if (!contact || !template) {
+            this.dbService.getDb().prepare('UPDATE campaign_queue SET status = ? WHERE id = ?').run('failed', item.queue_id);
+            setImmediate(() => this.processQueue());
+            return;
+        }
 
         // 5. Content Variation
-        const variations = this.dbService.getDb().prepare('SELECT * FROM template_variations WHERE template_id = ?').all(item.templateId) as any[];
+        const variations = this.dbService.getDb().prepare('SELECT * FROM template_variations WHERE template_id = ?').all(item.template_id) as any[];
         let messageBody = template.body;
 
         if (variations && variations.length > 0) {
             const randomVar = variations[Math.floor(Math.random() * variations.length)];
-            // Simplistic variation logic: replace whole body or part?
-            // Prompt says "Randomly select one template variation". 
-            // Assuming variation stores the full body text variant.
             messageBody = randomVar.variation;
         }
 
@@ -109,30 +99,28 @@ export class Scheduler {
         this.logSystem(`Waiting ${Math.round(delayTime / 1000)}s before sending to ${contact.phone}...`);
         await this.delay(delayTime);
 
-        if (!this.isRunning) {
-            this.queue.unshift(item); // Put back
-            return;
-        }
+        if (!this.isRunning) return;
 
         // 7. Send
         try {
             await this.waClient.sendMessage(contact.phone, messageBody, template.media_path);
 
-            // Log Success
-            this.dbService.getDb().prepare('INSERT INTO logs (contact_id, campaign_id, status, timestamp) VALUES (?, ?, ?, CURRENT_TIMESTAMP)')
-                .run(item.contactId, item.campaignId, 'SENT');
+            this.dbService.getDb().prepare('UPDATE campaign_queue SET status = ? WHERE id = ?').run('sent', item.queue_id);
+            this.dbService.getDb().prepare('INSERT INTO logs (contact_id, campaign_id, status, timestamp) VALUES (?, ?, ?, CURRENT_TIMESTAMP)').run(item.contact_id, item.campaign_id, 'SENT');
 
             this.messagesSentSession++;
-            this.mainWindow.webContents.send('log-update', { id: Date.now(), contact: contact.phone, status: 'SENT' });
+            if (!this.mainWindow.isDestroyed()) {
+                this.mainWindow.webContents.send('log-update', { id: Date.now(), contact: contact.phone, status: 'SENT' });
+            }
 
         } catch (error: any) {
             console.error('Send Error:', error);
-            this.dbService.getDb().prepare('INSERT INTO logs (contact_id, campaign_id, status, error, timestamp) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)')
-                .run(item.contactId, item.campaignId, 'FAILED', error.message);
+            this.dbService.getDb().prepare('UPDATE campaign_queue SET status = ? WHERE id = ?').run('failed', item.queue_id);
+            this.dbService.getDb().prepare('INSERT INTO logs (contact_id, campaign_id, status, error, timestamp) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)').run(item.contact_id, item.campaign_id, 'FAILED', error.message);
 
-            this.mainWindow.webContents.send('log-update', { id: Date.now(), contact: contact.phone, status: 'FAILED', error: error.message });
-
-            // Auto-stop on error spike? For now just log.
+            if (!this.mainWindow.isDestroyed()) {
+                this.mainWindow.webContents.send('log-update', { id: Date.now(), contact: contact.phone, status: 'FAILED', error: error.message });
+            }
         }
 
         // Loop
@@ -153,7 +141,10 @@ export class Scheduler {
     private updateStatus(status?: string) {
         if (!this.mainWindow.isDestroyed()) {
             this.mainWindow.webContents.send('status-update', status || (this.isRunning ? 'running' : 'idle'));
-            this.mainWindow.webContents.send('queue-update', this.queue.length);
+            try {
+                const countRow = this.dbService.getDb().prepare("SELECT COUNT(*) as count FROM campaign_queue q JOIN campaigns c ON q.campaign_id = c.id WHERE q.status = 'pending' AND c.status = 'active'").get() as any;
+                this.mainWindow.webContents.send('queue-update', countRow ? countRow.count : 0);
+            } catch (e) { }
         }
     }
 }

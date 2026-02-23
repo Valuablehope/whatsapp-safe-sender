@@ -20,8 +20,11 @@ electron_1.contextBridge.exposeInMainWorld('electronAPI', {
     // Specific API methods (safer than generic send/receive)
     getContacts: () => electron_1.ipcRenderer.invoke('get-contacts'),
     saveContact: (contact) => electron_1.ipcRenderer.invoke('save-contact', contact),
+    getCampaigns: () => electron_1.ipcRenderer.invoke('get-campaigns'),
+    createCampaign: (name) => electron_1.ipcRenderer.invoke('create-campaign', name),
     createTemplate: (data) => electron_1.ipcRenderer.invoke('create-template', data),
-    startCampaign: (campaignId) => electron_1.ipcRenderer.invoke('start-campaign', campaignId),
+    startCampaign: (data) => electron_1.ipcRenderer.invoke('start-campaign', data),
+    resumeCampaign: (campaignId) => electron_1.ipcRenderer.invoke('resume-campaign', campaignId),
     stopCampaign: () => electron_1.ipcRenderer.invoke('stop-campaign'),
     onLogUpdate: (callback) => electron_1.ipcRenderer.on('log-update', (_event, log) => callback(log)),
     onStatusUpdate: (callback) => electron_1.ipcRenderer.on('status-update', (_event, status) => callback(status)),

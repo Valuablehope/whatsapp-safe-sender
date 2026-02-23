@@ -83,6 +83,23 @@ function setupHandlers(win) {
         `).all(groupId);
     });
     // Campaign IPC
+    handle('get-campaigns', () => {
+        return dbService.getDb().prepare(`
+            SELECT c.*, 
+                   COUNT(q.id) as total_queue,
+                   SUM(CASE WHEN q.status = 'sent' THEN 1 ELSE 0 END) as sent_count,
+                   SUM(CASE WHEN q.status = 'failed' THEN 1 ELSE 0 END) as failed_count
+            FROM campaigns c
+            LEFT JOIN campaign_queue q ON c.id = q.campaign_id
+            GROUP BY c.id
+            ORDER BY c.created_at DESC
+        `).all();
+    });
+    handle('create-campaign', (_event, name) => {
+        const stmt = dbService.getDb().prepare('INSERT INTO campaigns (name, status) VALUES (?, ?)');
+        const result = stmt.run(name || 'Untitled Campaign', 'draft');
+        return { id: result.lastInsertRowid };
+    });
     handle('create-template', (_event, data) => {
         // data: { title, type, body, variations[], mediaPath }
         const stmt = dbService.getDb().prepare('INSERT INTO templates (title, type, body, media_path) VALUES (?, ?, ?, ?)');
@@ -97,22 +114,38 @@ function setupHandlers(win) {
         }
         return { id: templateId };
     });
-    handle('start-campaign', (_event, campaignData) => {
-        // campaignData: { templateId, contactIds[] }
-        // 1. Create Campaign Record
-        const stmt = dbService.getDb().prepare('INSERT INTO campaigns (template_id) VALUES (?)');
-        const result = stmt.run(campaignData.templateId);
-        const campaignId = result.lastInsertRowid;
-        // 2. Build Queue
-        const queueItems = campaignData.contactIds.map((cid) => ({
-            contactId: cid,
-            templateId: campaignData.templateId,
-            campaignId: campaignId
-        }));
-        // 3. Add to Scheduler
-        scheduler.addToQueue(queueItems);
+    handle('start-campaign', (_event, data) => {
+        // data: { campaignId, title, body, variations[], mediaPath, contactIds[] }
+        // 1. Create Template
+        const stmtTpl = dbService.getDb().prepare('INSERT INTO templates (title, type, body, media_path) VALUES (?, ?, ?, ?)');
+        const resultTpl = stmtTpl.run(data.title || 'Untitled Template', 'text', data.body, data.mediaPath || null);
+        const templateId = resultTpl.lastInsertRowid;
+        if (data.variations && data.variations.length > 0) {
+            const varStmt = dbService.getDb().prepare('INSERT INTO template_variations (template_id, variation) VALUES (?, ?)');
+            for (const v of data.variations) {
+                if (v && v.trim())
+                    varStmt.run(templateId, v);
+            }
+        }
+        // 2. Update Campaign
+        const stmtUpdate = dbService.getDb().prepare('UPDATE campaigns SET template_id = ?, status = ? WHERE id = ?');
+        stmtUpdate.run(templateId, 'active', data.campaignId);
+        // 3. Build Queue
+        const insertQueue = dbService.getDb().prepare('INSERT OR IGNORE INTO campaign_queue (campaign_id, contact_id, status) VALUES (?, ?, ?)');
+        const addQueueTx = dbService.getDb().transaction((contacts) => {
+            for (const cid of contacts) {
+                insertQueue.run(data.campaignId, cid, 'pending');
+            }
+        });
+        addQueueTx(data.contactIds);
+        // 4. Start Scheduler
         scheduler.start();
-        return { success: true, campaignId };
+        return { success: true, campaignId: data.campaignId };
+    });
+    handle('resume-campaign', (_event, campaignId) => {
+        dbService.getDb().prepare('UPDATE campaigns SET status = ? WHERE id = ?').run('active', campaignId);
+        scheduler.start();
+        return { success: true };
     });
     handle('stop-campaign', () => {
         scheduler.stop();

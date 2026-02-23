@@ -8,9 +8,11 @@ interface Window {
         getContacts: () => Promise<any[]>;
         saveContact: (contact: { id?: number; name: string; phone: string; tag?: string }) => Promise<any>;
 
+        getCampaigns: () => Promise<any[]>;
+        createCampaign: (name: string) => Promise<any>;
+        resumeCampaign: (campaignId: number) => Promise<any>;
         createTemplate: (data: { title: string; type?: string; body: string; variations?: string[]; mediaPath?: string | null }) => Promise<any>;
-
-        startCampaign: (campaignData: { templateId: number; contactIds: number[] }) => Promise<any>;
+        startCampaign: (campaignData: any) => Promise<any>;
         stopCampaign: () => Promise<any>;
 
         onLogUpdate: (callback: (log: any) => void) => void;

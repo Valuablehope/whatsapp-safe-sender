@@ -33,16 +33,16 @@ export const useElectron = () => {
     const getContacts = async () => window.electronAPI?.getContacts();
     const saveContact = async (c: any) => window.electronAPI?.saveContact(c);
 
+    const getCampaigns = async () => window.electronAPI?.getCampaigns();
+    const createCampaign = async (name: string) => window.electronAPI?.createCampaign(name);
+    const resumeCampaign = async (campaignId: number) => window.electronAPI?.resumeCampaign(campaignId);
+
     const createTemplate = async (data: { title: string, body: string, variations: string[], mediaPath?: string | null }) => {
-        // Assuming preload exposes createTemplate via invoke('create-template', data)
-        // I need to add this to preload.ts as well!
-        // Or use generic sendMessage if no return needed, but we need ID.
-        // So I MUST update preload.ts to expose `createTemplate`.
         return window.electronAPI?.createTemplate(data);
     };
 
-    const startCampaign = async (templateId: number, contactIds: number[]) => {
-        return window.electronAPI?.startCampaign({ templateId, contactIds });
+    const startCampaign = async (data: any) => {
+        return window.electronAPI?.startCampaign(data);
     };
 
     const stopCampaign = async () => window.electronAPI?.stopCampaign();
@@ -58,6 +58,9 @@ export const useElectron = () => {
         qrCode,
         getContacts,
         saveContact,
+        getCampaigns,
+        createCampaign,
+        resumeCampaign,
         createTemplate,
         startCampaign,
         stopCampaign,

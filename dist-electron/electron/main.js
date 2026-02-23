@@ -15,6 +15,7 @@ const createWindow = () => {
     const mainWindow = new electron_1.BrowserWindow({
         width: 1200,
         height: 800,
+        icon: path_1.default.join(__dirname, process.env.VITE_DEV_SERVER_URL ? '../../public/logo.ico' : '../../dist/logo.ico'),
         webPreferences: {
             preload: path_1.default.join(__dirname, 'preload.js'),
             nodeIntegration: false,

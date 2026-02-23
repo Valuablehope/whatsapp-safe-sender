@@ -1,4 +1,4 @@
-import { Send, LayoutDashboard, Users, FileText, Wifi, WifiOff } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Wifi, WifiOff } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Badge } from '../ui/Badge';
 import './sidebar.css';
@@ -20,8 +20,8 @@ export function Sidebar({ currentView, onViewChange, status }: SidebarProps) {
     return (
         <aside className="sidebar">
             <div className="sidebar-header">
-                <Send className="text-emerald" size={28} />
-                <h1 className="sidebar-title">AntiBan Pro</h1>
+                <img src="/logo.ico" alt="ECHO Logo" width={48} height={48} className="rounded" />
+                <h1 className="sidebar-title">ECHO</h1>
             </div>
 
             <nav className="sidebar-nav">
