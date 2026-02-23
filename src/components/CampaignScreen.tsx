@@ -473,7 +473,7 @@ export const CampaignScreen = ({ status }: { status: string }) => {
                                             className="hidden"
                                             ref={mediaInputRef}
                                         />
-                                        <Button variant="secondary" onClick={() => mediaInputRef.current?.click()} className="gap-2" disabled={uploadProgress !== null}>
+                                        <Button variant="primary" onClick={() => mediaInputRef.current?.click()} className="gap-2" disabled={uploadProgress !== null}>
                                             <ImageIcon size={16} />
                                             {mediaPath ? 'Change Media' : 'Select Media'}
                                         </Button>
@@ -503,7 +503,7 @@ export const CampaignScreen = ({ status }: { status: string }) => {
                                             <Input key={i} placeholder={`Variation ${i + 1}`} value={v} onChange={e => updateVariation(i, e.target.value)} className="mb-2" />
                                         ))}
                                     </div>
-                                    <Button variant="secondary" onClick={addVariation} className="w-full gap-2"><Plus size={16} /> Add Variation</Button>
+                                    <Button variant="primary" onClick={addVariation} className="w-full gap-2"><Plus size={16} /> Add Variation</Button>
                                 </div>
                             </CardContent>
                         </Card>
@@ -517,11 +517,11 @@ export const CampaignScreen = ({ status }: { status: string }) => {
                             </CardHeader>
                             <CardContent className="flex-1 flex flex-col pt-6 overflow-hidden">
                                 <div className="flex flex-wrap gap-3 mb-6 shrink-0">
-                                    <label className="btn btn-secondary flex-1 cursor-pointer">
+                                    <label className="btn btn-primary flex-1 cursor-pointer">
                                         <Upload size={16} className="mr-2" /> Import CSV
                                         <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
                                     </label>
-                                    <Button variant="secondary" onClick={handleLoadContacts} className="flex-1 gap-2"><Users size={16} /> Saved</Button>
+                                    <Button variant="primary" onClick={handleLoadContacts} className="flex-1 gap-2"><Users size={16} /> Saved</Button>
                                     <Button variant="destructive" onClick={() => setContacts([])} size="icon" className="flex-none"><Trash2 size={16} /></Button>
                                 </div>
                                 <div className="contacts-list-container flex-1 overflow-y-auto pr-2 min-h-[150px]">
